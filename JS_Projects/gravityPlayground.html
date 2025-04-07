@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gravity Playground</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+        }
+        
+        #canvas {
+            display: block;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        button {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .instructions {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="addPlanet">Add Planet</button>
+        <button id="clear">Clear All</button>
+        <span>Planets: <span id="planetCount">0</span></span>
+    </div>
+    
+    <div class="instructions">
+        Click to add planets. Larger planets have stronger gravity.
+    </div>
+    
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const planets = [];
+        
+        // Set canvas to full window size
+        canvas.width = window.innerWidth;
+        canvas.width = window.innerHeight;
+        
+        // Update canvas size when window resizes
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Planet class
+        class Planet {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius || Math.random() * 20 + 10;
+                this.mass = this.radius * 2;
+                this.vx = 0;
+                this.vy = 0;
+                this.color = this.getRandomColor();
+            }
+            
+            getRandomColor() {
+                const colors = ['#FF5252', '#FFD740', '#64FFDA', '#448AFF', '#B388FF'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // Add glow effect
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+            }
+            
+            attract(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Don't attract if too close or same planet
+                if (distance < 5 || distance > 500) return;
+                
+                const force = (this.mass * other.mass) / (distance * distance) * 0.1;
+                const angle = Math.atan2(dy, dx);
+                
+                other.vx += force * Math.cos(angle);
+                other.vy += force * Math.sin(angle);
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Apply friction
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+                
+                // Bounce off walls
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx = -this.vx * 0.8;
+                }
+                
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy = -this.vy * 0.8;
+                }
+                
+                // Keep within bounds
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+            }
+        }
+        
+        // Add new planet on click
+        canvas.addEventListener('click', (e) => {
+            addPlanet(e.clientX, e.clientY);
+        });
+        
+        // Button to add random planet
+        document.getElementById('addPlanet').addEventListener('click', () => {
+            addPlanet(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height
+            );
+        });
+        
+        // Clear all planets
+        document.getElementById('clear').addEventListener('click', clearPlanets);
+        
+        function addPlanet(x, y) {
+            planets.push(new Planet(x, y));
+            updatePlanetCount();
+        }
+        
+        function clearPlanets() {
+            planets.length = 0;
+            updatePlanetCount();
+        }
+        
+        function updatePlanetCount() {
+            document.getElementById('planetCount').textContent = planets.length;
+        }
+        
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.shadowBlur = 0;
+            
+            // Update physics
+            planets.forEach(planet1 => {
+                planets.forEach(planet2 => {
+                    if (planet1 !== planet2) {
+                        planet1.attract(planet2);
+                    }
+                });
+            });
+            
+            // Draw all planets
+            planets.forEach(planet => {
+                planet.update();
+                planet.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
