@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Particle Canvas</title>
+    <style>
+        body{
+            margin:0;
+            overflow:hidden;
+            background:#1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="clearCanvas">Clear</button>
+        <span>Particle Count: <span id="count">0</span></span>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementsByID('canvas');
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        let mouse = {x: null, y: null, radius:100 };
+
+        //Canvas setup
+        function init(){
+            canvas.width = window.innerWidth;
+            canvas.heigth = window.innerHeight;
+        }
+        init();
+        window.addEventListener('resize',init);
+        //Particles class
+        class Particle{
+            constructor(x,y){
+                this.x=x;
+                this.y=y;
+                this.size = Math.random(0)*3+1;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.density = (Math.random()*10)+5;
+                this.color = `hsl(${Math.random()*360},100%,50%)`;
+            }
+            draw(){
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    </script>
+</body>
+</html>
