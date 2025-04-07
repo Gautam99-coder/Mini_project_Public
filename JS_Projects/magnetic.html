@@ -2,54 +2,146 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magnetic Particle Canvas</title>
     <style>
-        body{
-            margin:0;
-            overflow:hidden;
-            background:#1a1a1a;
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+        
+        canvas {
+            cursor: crosshair;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        button {
+            background: #4CAF50;
+            border: none;
+            padding: 8px 15px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
         }
     </style>
 </head>
 <body>
     <div class="controls">
-        <button onclick="clearCanvas">Clear</button>
+        <button onclick="clearCanvas()">Clear</button>
         <span>Particle Count: <span id="count">0</span></span>
     </div>
     <canvas id="canvas"></canvas>
 
     <script>
-        const canvas = document.getElementsByID('canvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const particles = [];
-        let mouse = {x: null, y: null, radius:100 };
+        let mouse = { x: null, y: null, radius: 100 };
 
-        //Canvas setup
-        function init(){
+        // Canvas setup
+        function init() {
             canvas.width = window.innerWidth;
-            canvas.heigth = window.innerHeight;
+            canvas.height = window.innerHeight;
         }
         init();
-        window.addEventListener('resize',init);
-        //Particles class
-        class Particle{
-            constructor(x,y){
-                this.x=x;
-                this.y=y;
-                this.size = Math.random(0)*3+1;
-                this.baseX = this.x;
-                this.baseY = this.y;
-                this.density = (Math.random()*10)+5;
-                this.color = `hsl(${Math.random()*360},100%,50%)`;
+        window.addEventListener('resize', init);
+
+        // Particle class
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.baseX = x;
+                this.baseY = y;
+                this.density = (Math.random() * 10) + 5;
+                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
             }
-            draw(){
+
+            draw() {
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.closePath();
                 ctx.fill();
             }
+
+            update() {
+                // Mouse interaction
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const forceDirectionX = dx / distance;
+                const forceDirectionY = dy / distance;
+                const maxDistance = mouse.radius;
+                const force = (maxDistance - distance) / maxDistance;
+                const directionX = forceDirectionX * force * this.density;
+                const directionY = forceDirectionY * force * this.density;
+
+                if (distance < mouse.radius) {
+                    this.x -= directionX;
+                    this.y -= directionY;
+                } else {
+                    if (this.x !== this.baseX) {
+                        this.x -= (this.x - this.baseX) / 10;
+                    }
+                    if (this.y !== this.baseY) {
+                        this.y -= (this.y - this.baseY) / 10;
+                    }
+                }
+            }
+        }
+
+        // Create particles
+        function createParticles() {
+            for (let i = 0; i < 1000; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+            document.getElementById('count').textContent = particles.length;
+        }
+        createParticles();
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Mouse handlers
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            mouse.x = undefined;
+            mouse.y = undefined;
+        });
+
+        // Clear canvas
+        function clearCanvas() {
+            particles.length = 0;
+            createParticles();
         }
     </script>
 </body>
