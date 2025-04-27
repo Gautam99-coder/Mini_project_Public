@@ -8,7 +8,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "ad_platform";
+$dbname = "ad_platform_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
